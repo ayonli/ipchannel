@@ -1,0 +1,37 @@
+{
+  "name": "uipc",
+  "version": "0.1.0",
+  "description": "Universal IPC channel without master process and server.",
+  "main": "dist/index.js",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "node test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hyurl/uipc.git"
+  },
+  "keywords": [
+    "ipc",
+    "inter-processing",
+    "channel",
+    "multi-processing"
+  ],
+  "author": "Ayon Lee <i@hyurl.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hyurl/uipc/issues"
+  },
+  "homepage": "https://github.com/hyurl/uipc#readme",
+  "dependencies": {
+    "@types/fs-extra": "^5.0.4",
+    "first-officer": "^0.1.1",
+    "fs-extra": "^7.0.0",
+    "lodash": "^4.17.11",
+    "tslib": "^1.9.3"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.118",
+    "@types/node": "^10.12.2"
+  }
+}
