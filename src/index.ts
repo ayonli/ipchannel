@@ -46,24 +46,6 @@ namespace uipc {
         private waitingMessages: [number | "all", string, any[]][] = [];
         private lastMessage: [number | "all", string, any[]];
 
-        on(event: "connect" | "disconnect" | "error", listener: (err: Error) => void): this;
-        on(event: "message", listener: (pid: number, msg) => void): this;
-        on(event: string, listener: (pid: number, ...args) => void): this;
-        on(event, listener): this {
-            return super.on(event, listener);
-        }
-
-        to(pid: number | "all"): Message {
-            return new Message(this, pid);
-        }
-
-        broadcast(msg: any): boolean;
-        broadcast(event: string, ...data): boolean;
-        broadcast(...args) {
-            let msg = this.to("all");
-            return msg.emit.apply(msg, args);
-        }
-
         /**
          * Returns `true` if the channel is connected to the server, `false` 
          * otherwise.
@@ -161,6 +143,24 @@ namespace uipc {
         disconnect() {
             this.connected && this.connection.destroy();
             this.emit("disconnect", null);
+        }
+
+        on(event: "connect" | "disconnect" | "error", listener: (err: Error) => void): this;
+        on(event: "message", listener: (pid: number, msg) => void): this;
+        on(event: string, listener: (pid: number, ...args) => void): this;
+        on(event, listener): this {
+            return super.on(event, listener);
+        }
+
+        to(pid: number | "all"): Message {
+            return new Message(this, pid);
+        }
+
+        broadcast(msg: any): boolean;
+        broadcast(event: string, ...data): boolean;
+        broadcast(...args) {
+            let msg = this.to("all");
+            return msg.emit.apply(msg, args);
         }
 
         private send(receiver: number | "all", event: string, data: any[]): boolean {

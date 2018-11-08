@@ -64,16 +64,11 @@ export function getConnection(timeout = 5000, pid?: number) {
         let addr = await getSocketAddr(pid),
             conn: net.Socket;
 
-        if (process.connected) { // child process
-            conn = await tryConnect(addr);
+        conn = await tryConnect(addr);
 
-            if (!conn && pid === process.pid)
-                conn = await tryServe(pid, addr);
-
-            conn ? resolve(conn) : retryConnect(resolve, reject, timeout, pid);
-        } else {
+        if (!conn && pid === process.pid)
             conn = await tryServe(pid, addr);
-            conn ? resolve(conn) : retryConnect(resolve, reject, timeout, pid);
-        }
+
+        conn ? resolve(conn) : retryConnect(resolve, reject, timeout, pid);
     });
 }

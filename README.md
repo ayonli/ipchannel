@@ -59,21 +59,21 @@ const uipc = require("uipc");
     });
 
     switch (channel.pid) {
-        case 0:
+        case 1:
             channel.on("custom-event", (sender, ...data) => {
                 console.log(`Peer ${sender} emits: ${JSON.stringify(data)}`);
             });
             break;
 
-        case 1:
+        case 2:
             channel.to(0).emit("Hi peer 0");
             break;
 
-        case 2:
+        case 3:
             channel.to(0).emit("custom-event", "hello world");
             break;
 
-        case 3:
+        case 4:
             channel.broadcast("all attention");
             break;
     }

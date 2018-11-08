@@ -34,16 +34,6 @@ var uipc;
             super(...arguments);
             this.waitingMessages = [];
         }
-        on(event, listener) {
-            return super.on(event, listener);
-        }
-        to(pid) {
-            return new Message(this, pid);
-        }
-        broadcast(...args) {
-            let msg = this.to("all");
-            return msg.emit.apply(msg, args);
-        }
         get connected() {
             return !!this.connection && !this.connection.destroyed;
         }
@@ -128,6 +118,16 @@ var uipc;
         disconnect() {
             this.connected && this.connection.destroy();
             this.emit("disconnect", null);
+        }
+        on(event, listener) {
+            return super.on(event, listener);
+        }
+        to(pid) {
+            return new Message(this, pid);
+        }
+        broadcast(...args) {
+            let msg = this.to("all");
+            return msg.emit.apply(msg, args);
         }
         send(receiver, event, data) {
             if (!this.connected) {

@@ -25,7 +25,7 @@
   "homepage": "https://github.com/hyurl/uipc#readme",
   "dependencies": {
     "@types/fs-extra": "^5.0.4",
-    "first-officer": "^0.1.1",
+    "first-officer": "^0.1.2",
     "fs-extra": "^7.0.0",
     "lodash": "^4.17.11",
     "tslib": "^1.9.3"

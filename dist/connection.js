@@ -59,16 +59,10 @@ function getConnection(timeout = 5000, pid) {
     return new Promise((resolve, reject) => tslib_1.__awaiter(this, void 0, void 0, function* () {
         pid = pid || (yield first_officer_1.getPid());
         let addr = yield server_1.getSocketAddr(pid), conn;
-        if (process.connected) {
-            conn = yield tryConnect(addr);
-            if (!conn && pid === process.pid)
-                conn = yield tryServe(pid, addr);
-            conn ? resolve(conn) : retryConnect(resolve, reject, timeout, pid);
-        }
-        else {
+        conn = yield tryConnect(addr);
+        if (!conn && pid === process.pid)
             conn = yield tryServe(pid, addr);
-            conn ? resolve(conn) : retryConnect(resolve, reject, timeout, pid);
-        }
+        conn ? resolve(conn) : retryConnect(resolve, reject, timeout, pid);
     }));
 }
 exports.getConnection = getConnection;

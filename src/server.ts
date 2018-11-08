@@ -41,7 +41,7 @@ export async function createServer(pid: number) {
         // Ensure even a child-process exited abnormally and rebooted via 
         // some mechanism, the new process still has the same pid as 
         // expected.
-        let pid = 0;
+        let pid = 1;
         while (true) {
             if (!Clients[pid]) {
                 Clients[pid] = socket;

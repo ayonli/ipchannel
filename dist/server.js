@@ -41,7 +41,7 @@ function createServer(pid) {
                     finally { }
                 }
             });
-            let pid = 0;
+            let pid = 1;
             while (true) {
                 if (!Clients[pid]) {
                     Clients[pid] = socket;
