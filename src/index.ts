@@ -26,7 +26,7 @@ export class Message {
 export class Channel extends EventEmitter {
     /** Current peer ID. */
     pid: number;
-    private iChannel = openChannel(socket => {
+    private iChannel = openChannel("ipchannel", socket => {
         // server-side logic
         socket.on("data", (buf) => {
             for (let [receiver, event, ...data] of receive(buf)) {

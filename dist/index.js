@@ -25,7 +25,7 @@ exports.Message = Message;
 class Channel extends events_1.EventEmitter {
     constructor() {
         super(...arguments);
-        this.iChannel = open_channel_1.openChannel(socket => {
+        this.iChannel = open_channel_1.openChannel("ipchannel", socket => {
             socket.on("data", (buf) => {
                 for (let [receiver, event, ...data] of transfer_1.receive(buf)) {
                     if (receiver == "all") {
