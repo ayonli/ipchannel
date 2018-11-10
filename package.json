@@ -1,15 +1,15 @@
 {
-  "name": "uipc",
+  "name": "ipchannel",
   "version": "0.1.0",
-  "description": "Universal IPC channel without master process and server.",
+  "description": "Elegant and self-hosting channel for inter-process communication.",
   "main": "dist/index.js",
   "types": "src/index.ts",
   "scripts": {
-    "test": "node test"
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hyurl/uipc.git"
+    "url": "git+https://github.com/hyurl/ipchannel.git"
   },
   "keywords": [
     "ipc",
@@ -20,18 +20,23 @@
   "author": "Ayon Lee <i@hyurl.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/hyurl/uipc/issues"
+    "url": "https://github.com/hyurl/ipchannel/issues"
   },
-  "homepage": "https://github.com/hyurl/uipc#readme",
+  "homepage": "https://github.com/hyurl/ipchannel#readme",
   "dependencies": {
     "@types/fs-extra": "^5.0.4",
-    "first-officer": "^0.1.2",
-    "fs-extra": "^7.0.0",
+    "fs-extra": "^7.0.1",
     "lodash": "^4.17.11",
+    "open-channel": "^0.1.2",
     "tslib": "^1.9.3"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.118",
-    "@types/node": "^10.12.2"
+    "@types/node": "^10.12.3",
+    "encoded-buffer": "^0.2.1",
+    "mocha": "^5.2.0"
+  },
+  "engines": {
+    "node": ">=6"
   }
 }
