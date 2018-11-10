@@ -1,6 +1,6 @@
 {
   "name": "ipchannel",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Elegant and self-hosting channel for inter-process communication.",
   "main": "dist/index.js",
   "types": "src/index.ts",
@@ -27,7 +27,7 @@
     "@types/fs-extra": "^5.0.4",
     "fs-extra": "^7.0.1",
     "lodash": "^4.17.11",
-    "open-channel": "^0.1.5",
+    "open-channel": "^0.1.6",
     "tslib": "^1.9.3"
   },
   "devDependencies": {
