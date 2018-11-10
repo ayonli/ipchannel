@@ -1,4 +1,4 @@
-# ipchannel
+# IPChannel
 
 **Elegant and self-hosting channel for inter-process communication.**
 
