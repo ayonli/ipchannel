@@ -1,7 +1,7 @@
 import * as net from "net";
 import { EventEmitter } from "events";
 import { openChannel } from "open-channel";
-import { send, receive } from './transfer';
+import { send, receive } from "bsp";
 
 function isSocketResetError(err) {
     return err instanceof Error
@@ -28,8 +28,11 @@ export class Channel extends EventEmitter {
     pid: number;
     private iChannel = openChannel("ipchannel", socket => {
         // server-side logic
+        let remains = [];
         socket.on("data", (buf) => {
-            for (let [receiver, event, ...data] of receive(buf)) {
+            let msg = receive<[number | "all", string, ...any[]]>(buf, remains);
+
+            for (let [receiver, event, ...data] of msg) {
                 if (receiver == "all") {
                     for (let pid in Clients) {
                         if (!isNaN(<any>pid)) {
@@ -71,9 +74,12 @@ export class Channel extends EventEmitter {
         // notify the client has connected
         socket.write(send(0, "connect", pid));
     });
+    private remains = [];
     private socket = this.iChannel.connect().on("data", buf => {
         // client-side logic
-        for (let [sender, event, ...data] of receive(buf)) {
+        let msg = receive<[number | "all", string, ...any[]]>(buf, this.remains);
+
+        for (let [sender, event, ...data] of msg) {
             if (event == "connect") {
                 this.pid = data[0];
                 this.emit("connect", null);

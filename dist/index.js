@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
 const open_channel_1 = require("open-channel");
-const transfer_1 = require("./transfer");
+const bsp_1 = require("bsp");
 function isSocketResetError(err) {
     return err instanceof Error
         && (err["code"] == "ECONNRESET"
@@ -26,17 +26,19 @@ class Channel extends events_1.EventEmitter {
     constructor() {
         super(...arguments);
         this.iChannel = open_channel_1.openChannel("ipchannel", socket => {
+            let remains = [];
             socket.on("data", (buf) => {
-                for (let [receiver, event, ...data] of transfer_1.receive(buf)) {
+                let msg = bsp_1.receive(buf, remains);
+                for (let [receiver, event, ...data] of msg) {
                     if (receiver == "all") {
                         for (let pid in Clients) {
                             if (!isNaN(pid)) {
-                                Clients[pid].write(transfer_1.send(data[0], event, ...data.slice(1)));
+                                Clients[pid].write(bsp_1.send(data[0], event, ...data.slice(1)));
                             }
                         }
                     }
                     else {
-                        Clients[receiver].write(transfer_1.send(data[0], event, ...data.slice(1)));
+                        Clients[receiver].write(bsp_1.send(data[0], event, ...data.slice(1)));
                     }
                 }
             }).on("end", () => {
@@ -63,10 +65,12 @@ class Channel extends events_1.EventEmitter {
                 }
                 pid++;
             }
-            socket.write(transfer_1.send(0, "connect", pid));
+            socket.write(bsp_1.send(0, "connect", pid));
         });
+        this.remains = [];
         this.socket = this.iChannel.connect().on("data", buf => {
-            for (let [sender, event, ...data] of transfer_1.receive(buf)) {
+            let msg = bsp_1.receive(buf, this.remains);
+            for (let [sender, event, ...data] of msg) {
                 if (event == "connect") {
                     this.pid = data[0];
                     this.emit("connect", null);
@@ -96,7 +100,7 @@ class Channel extends events_1.EventEmitter {
         return new Message(this, receiver);
     }
     send(receiver, event, data) {
-        return this.socket.write(transfer_1.send(receiver, event, this.pid, ...data));
+        return this.socket.write(bsp_1.send(receiver, event, this.pid, ...data));
     }
 }
 exports.Channel = Channel;
