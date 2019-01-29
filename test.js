@@ -1,6 +1,17 @@
 const assert = require("assert");
 const cluster = require("cluster");
-const { encode, decode } = require("encoded-buffer");
+const pick = require("lodash/pick");
+const omit = require("lodash/omit");
+
+const Errors = {
+    AssertionError: assert.AssertionError,
+    Error,
+    EvalError,
+    RangeError,
+    ReferenceError,
+    SyntaxError,
+    TypeError
+};
 
 if (cluster.isMaster) {
     var errors = [];
@@ -11,11 +22,34 @@ if (cluster.isMaster) {
         workers.push(worker);
 
         worker.on("message", (msg) => {
-            try { msg = decode(Buffer.from(msg))[0] } finally { }
-            if (msg instanceof Error) {
-                console.error(msg);
+            try { msg = JSON.parse(msg) } finally { }
+            if (msg.name in Errors) {
+                let err = Object.create(Errors[msg.name].prototype);
+
+                Object.defineProperties(err, {
+                    name: {
+                        enumerable: false,
+                        writable: true,
+                        configurable: true,
+                        value: msg.name
+                    },
+                    message: {
+                        enumerable: false,
+                        writable: true,
+                        configurable: true,
+                        value: msg.message
+                    },
+                    stack: {
+                        enumerable: false,
+                        writable: true,
+                        configurable: true,
+                        value: msg.stack
+                    }
+                });
+
+                console.error(err);
                 worker.kill();
-                errors.push(msg);
+                errors.push(err);
             }
         });
     }
@@ -34,7 +68,9 @@ if (cluster.isMaster) {
     const channel = require(".").default;
 
     function sendError(err) {
-        return process.send(encode(err).toString());
+        var reserved = ["name", "message", "stack"];
+        var msg = Object.assign(pick(err, reserved), omit(err, reserved));
+        return process.send(msg);
     }
 
     describe("open channel", () => {

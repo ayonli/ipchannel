@@ -31,20 +31,6 @@
     one immediately and guarantee no-downtime period communication.
 7. Fully support under *PM2* supervision.
 8. Sending messages event before the channel is connected.
-9. Supports more types of data, currently these types are supported:
-    - `string`
-    - `number`
-    - `boolean`
-    - `symbol` not the same symbol as original, just a new symbol with the same 
-        description.
-    - `undefined`
-    - `null`
-    - `object`
-    - `Array` only the enumerable elements will be transferred.
-    - `Buffer`
-    - `Date`
-    - `Error`
-    - `RegExp`
 
 ## How To Use?
 
@@ -158,6 +144,8 @@ possible, but brings the major IPC functionality across processes into NodeJS.
     with multi-entry applications.
 - IPChannel only supports communications on the same machine, it's not designed 
     for network communications with remote services.
+- For efficiency concerns, IPChannel currently uses JSON to transfer data 
+    through the channel, those data cannot be serialized by JSON will be lost.
 
 ## License
 
