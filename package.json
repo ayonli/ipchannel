@@ -1,6 +1,6 @@
 {
   "name": "ipchannel",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Elegant and self-hosting channel for inter-process communication.",
   "main": "dist/index.js",
   "types": "src/index.ts",
@@ -25,10 +25,10 @@
   "homepage": "https://github.com/hyurl/ipchannel#readme",
   "dependencies": {
     "bsp": "^0.2.0",
-    "open-channel": "^0.1.7"
+    "open-channel": "^0.1.8"
   },
   "devDependencies": {
-    "@types/node": "^10.12.5",
+    "@types/node": "^10.12.26",
     "lodash": "^4.17.11",
     "mocha": "^5.2.0"
   },
