@@ -3,11 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
 const open_channel_1 = require("open-channel");
 const bsp_1 = require("bsp");
-function isSocketResetError(err) {
-    return err instanceof Error
-        && (err["code"] == "ECONNRESET"
-            || /socket.*(ended|closed)/i.test(err.message));
-}
+const isSocketResetError = require("is-socket-reset-error");
 const Clients = {};
 class Message {
     constructor(channel, receiver) {
@@ -26,9 +22,9 @@ class Channel extends events_1.EventEmitter {
     constructor() {
         super(...arguments);
         this.iChannel = open_channel_1.openChannel("ipchannel", socket => {
-            let remains = [];
+            let temp = [];
             socket.on("data", (buf) => {
-                let msg = bsp_1.receive(buf, remains);
+                let msg = bsp_1.receive(buf, temp);
                 for (let [receiver, event, ...data] of msg) {
                     if (receiver == "all") {
                         for (let pid in Clients) {
@@ -67,9 +63,9 @@ class Channel extends events_1.EventEmitter {
             }
             socket.write(bsp_1.send(0, "connect", pid));
         });
-        this.remains = [];
+        this.temp = [];
         this.socket = this.iChannel.connect().on("data", buf => {
-            let msg = bsp_1.receive(buf, this.remains);
+            let msg = bsp_1.receive(buf, this.temp);
             for (let [sender, event, ...data] of msg) {
                 if (event == "connect") {
                     this.pid = data[0];

@@ -2,12 +2,7 @@ import * as net from "net";
 import { EventEmitter } from "events";
 import { openChannel } from "open-channel";
 import { send, receive } from "bsp";
-
-function isSocketResetError(err) {
-    return err instanceof Error
-        && (err["code"] == "ECONNRESET"
-            || /socket.*(ended|closed)/i.test(err.message));
-}
+import isSocketResetError = require("is-socket-reset-error");
 
 const Clients: { [pid: number]: net.Socket } = {};
 
@@ -28,9 +23,9 @@ export class Channel extends EventEmitter {
     pid: number;
     private iChannel = openChannel("ipchannel", socket => {
         // server-side logic
-        let remains = [];
+        let temp = [];
         socket.on("data", (buf) => {
-            let msg = receive<[number | "all", string, ...any[]]>(buf, remains);
+            let msg = receive<[number | "all", string, ...any[]]>(buf, temp);
 
             for (let [receiver, event, ...data] of msg) {
                 if (receiver == "all") {
@@ -74,10 +69,10 @@ export class Channel extends EventEmitter {
         // notify the client has connected
         socket.write(send(0, "connect", pid));
     });
-    private remains = [];
+    private temp = [];
     private socket = this.iChannel.connect().on("data", buf => {
         // client-side logic
-        let msg = receive<[number | "all", string, ...any[]]>(buf, this.remains);
+        let msg = receive<[number | "all", string, ...any[]]>(buf, this.temp);
 
         for (let [sender, event, ...data] of msg) {
             if (event == "connect") {
