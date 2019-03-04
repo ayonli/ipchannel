@@ -4,16 +4,14 @@ import { openChannel } from "open-channel";
 import { send, receive } from "bsp";
 import isSocketResetError = require("is-socket-reset-error");
 
-const Clients: { [pid: number]: net.Socket } = {};
-
 export class Message {
     constructor(private channel: Channel, private receiver: number | "all") { }
 
-    send(...data): boolean {
-        return this.channel["send"](this.receiver, "message", data);
+    send(...data: any[]): boolean {
+        return this.emit("message", ...data);
     }
 
-    emit(event: string, ...data): boolean {
+    emit(event: string, ...data: any[]): boolean {
         return this.channel["send"](this.receiver, event, data);
     }
 }
@@ -29,19 +27,19 @@ export class Channel extends EventEmitter {
 
             for (let [receiver, event, ...data] of msg) {
                 if (receiver == "all") {
-                    for (let pid in Clients) {
+                    for (let pid in Channel.Clients) {
                         if (!isNaN(<any>pid)) {
-                            Clients[pid].write(send(data[0], event, ...data.slice(1)));
+                            Channel.Clients[pid].write(send(data[0], event, ...data.slice(1)));
                         }
                     }
-                } else {
-                    Clients[receiver].write(send(data[0], event, ...data.slice(1)));
+                } else if (Channel.Clients[receiver]) {
+                    Channel.Clients[receiver].write(send(data[0], event, ...data.slice(1)));
                 }
             }
         }).on("end", () => {
-            for (let pid in Clients) {
-                if (!isNaN(<any>pid) && Clients[pid] === socket) {
-                    delete Clients[pid];
+            for (let pid in Channel.Clients) {
+                if (!isNaN(<any>pid) && Channel.Clients[pid] === socket) {
+                    delete Channel.Clients[pid];
                     break;
                 }
             }
@@ -59,8 +57,8 @@ export class Channel extends EventEmitter {
         // expected.
         let pid = 1;
         while (true) {
-            if (!Clients[pid]) {
-                Clients[pid] = socket;
+            if (!Channel.Clients[pid]) {
+                Channel.Clients[pid] = socket;
                 break;
             }
             pid++;
@@ -102,17 +100,17 @@ export class Channel extends EventEmitter {
 
     on(event: "connect" | "disconnect", listener: () => void): this;
     on(event: "error", listener: (err: Error) => void): this;
-    on(event: "message", listener: (sender: number, ...data) => void): this;
-    on(event: string, listener: (sender: number, ...data) => void): this;
-    on(event, listener): this {
+    on(event: "message", listener: (sender: number, ...data: any[]) => void): this;
+    on(event: string, listener: (sender: number, ...data: any[]) => void): this;
+    on(event: string, listener: (...args: any[]) => void): this {
         return super.on(event, listener);
     }
 
     once(event: "connect" | "disconnect", listener: () => void): this;
     once(event: "error", listener: (err: Error) => void): this;
-    once(event: "message", listener: (sender: number, ...data) => void): this;
-    once(event: string, listener: (sender: number, ...data) => void): this;
-    once(event, listener): this {
+    once(event: "message", listener: (sender: number, ...data: any[]) => void): this;
+    once(event: string, listener: (sender: number, ...data: any[]) => void): this;
+    once(event: string, listener: (...args: any[]) => void): this {
         return super.once(event, listener);
     }
 
@@ -123,6 +121,10 @@ export class Channel extends EventEmitter {
     private send(receiver: number | "all", event: string, data: any[]) {
         return this.socket.write(send(receiver, event, this.pid, ...data));
     }
+}
+
+export namespace Channel {
+    export const Clients: { [pid: number]: net.Socket } = {};
 }
 
 export const channel = new Channel;

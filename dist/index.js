@@ -4,14 +4,13 @@ const events_1 = require("events");
 const open_channel_1 = require("open-channel");
 const bsp_1 = require("bsp");
 const isSocketResetError = require("is-socket-reset-error");
-const Clients = {};
 class Message {
     constructor(channel, receiver) {
         this.channel = channel;
         this.receiver = receiver;
     }
     send(...data) {
-        return this.channel["send"](this.receiver, "message", data);
+        return this.emit("message", ...data);
     }
     emit(event, ...data) {
         return this.channel["send"](this.receiver, event, data);
@@ -27,20 +26,20 @@ class Channel extends events_1.EventEmitter {
                 let msg = bsp_1.receive(buf, temp);
                 for (let [receiver, event, ...data] of msg) {
                     if (receiver == "all") {
-                        for (let pid in Clients) {
+                        for (let pid in Channel.Clients) {
                             if (!isNaN(pid)) {
-                                Clients[pid].write(bsp_1.send(data[0], event, ...data.slice(1)));
+                                Channel.Clients[pid].write(bsp_1.send(data[0], event, ...data.slice(1)));
                             }
                         }
                     }
-                    else {
-                        Clients[receiver].write(bsp_1.send(data[0], event, ...data.slice(1)));
+                    else if (Channel.Clients[receiver]) {
+                        Channel.Clients[receiver].write(bsp_1.send(data[0], event, ...data.slice(1)));
                     }
                 }
             }).on("end", () => {
-                for (let pid in Clients) {
-                    if (!isNaN(pid) && Clients[pid] === socket) {
-                        delete Clients[pid];
+                for (let pid in Channel.Clients) {
+                    if (!isNaN(pid) && Channel.Clients[pid] === socket) {
+                        delete Channel.Clients[pid];
                         break;
                     }
                 }
@@ -55,8 +54,8 @@ class Channel extends events_1.EventEmitter {
             });
             let pid = 1;
             while (true) {
-                if (!Clients[pid]) {
-                    Clients[pid] = socket;
+                if (!Channel.Clients[pid]) {
+                    Channel.Clients[pid] = socket;
                     break;
                 }
                 pid++;
@@ -100,6 +99,9 @@ class Channel extends events_1.EventEmitter {
     }
 }
 exports.Channel = Channel;
+(function (Channel) {
+    Channel.Clients = {};
+})(Channel = exports.Channel || (exports.Channel = {}));
 exports.channel = new Channel;
 exports.default = exports.channel;
 //# sourceMappingURL=index.js.map
