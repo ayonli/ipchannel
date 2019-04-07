@@ -74,7 +74,7 @@ if (cluster.isMaster) {
     }
 
     describe("open channel", () => {
-        it("should not not connected at first", (done) => {
+        it("should not connected at first", (done) => {
             try {
                 assert.strictEqual(channel.connected, false);
                 assert.strictEqual(channel.pid, undefined);
@@ -91,7 +91,7 @@ if (cluster.isMaster) {
                 if (channel.connected) {
                     clearInterval(timer);
                     try {
-                        assert.strictEqual(typeof channel.connected, "boolean");
+                        assert.strictEqual(channel.connected, true);
                         assert.strictEqual(typeof channel.pid, "number");
                         assert.ok(channel.pid > 0);
                         done();

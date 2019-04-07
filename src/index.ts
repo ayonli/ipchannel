@@ -2,18 +2,16 @@ import * as net from "net";
 import { EventEmitter } from "events";
 import { openChannel } from "open-channel";
 import { send, receive } from "bsp";
-import isSocketResetError = require("is-socket-reset-error");
-
-const Clients: { [pid: number]: net.Socket } = {};
+import { BiMap } from "advanced-collections";
 
 export class Message {
     constructor(private channel: Channel, private receiver: number | "all") { }
 
-    send(...data): boolean {
+    send(...data: any[]): boolean {
         return this.channel["send"](this.receiver, "message", data);
     }
 
-    emit(event: string, ...data): boolean {
+    emit(event: string, ...data: any[]): boolean {
         return this.channel["send"](this.receiver, event, data);
     }
 }
@@ -21,56 +19,33 @@ export class Message {
 export class Channel extends EventEmitter {
     /** Current peer ID. */
     pid: number;
-    private iChannel = openChannel("ipchannel", socket => {
+    private temp: Buffer[] = [];
+    protected clients = new BiMap<number, net.Socket>();
+    protected detachClient = (socket: net.Socket) => this.clients.deleteValue(socket);
+    protected iChannel = openChannel("ipchannel", socket => {
         // server-side logic
         let temp = [];
+
         socket.on("data", (buf) => {
             let msg = receive<[number | "all", string, ...any[]]>(buf, temp);
 
             for (let [receiver, event, ...data] of msg) {
-                if (receiver == "all") {
-                    for (let pid in Clients) {
-                        if (!isNaN(<any>pid)) {
-                            Clients[pid].write(send(data[0], event, ...data.slice(1)));
-                        }
-                    }
-                } else {
-                    Clients[receiver].write(send(data[0], event, ...data.slice(1)));
-                }
-            }
-        }).on("end", () => {
-            for (let pid in Clients) {
-                if (!isNaN(<any>pid) && Clients[pid] === socket) {
-                    delete Clients[pid];
-                    break;
-                }
-            }
-        }).on("error", (err) => {
-            if (isSocketResetError(err)) {
-                try {
-                    socket.destroy();
-                    socket.unref();
-                } finally { }
-            }
-        });
+                let socket: net.Socket;
 
-        // Ensure even a child-process exited abnormally and rebooted via 
-        // some mechanism, the new process still has the same pid as 
-        // expected.
-        let pid = 1;
-        while (true) {
-            if (!Clients[pid]) {
-                Clients[pid] = socket;
-                break;
+                if (receiver == "all") {
+                    for (let socket of this.clients.values()) {
+                        socket.write(send(data[0], event, ...data.slice(1)));
+                    }
+                } else if (socket = this.clients.get(receiver)) {
+                    socket.write(send(data[0], event, ...data.slice(1)));
+                }
             }
-            pid++;
-        }
+        }).on("end", this.detachClient).on("close", this.detachClient);
 
         // notify the client has connected
-        socket.write(send(0, "connect", pid));
+        socket.write(send(0, "connect", this.attachClient(socket)));
     });
-    private temp = [];
-    private socket = this.iChannel.connect().on("data", buf => {
+    protected socket = this.iChannel.connect().on("data", buf => {
         // client-side logic
         let msg = receive<[number | "all", string, ...any[]]>(buf, this.temp);
 
@@ -102,17 +77,17 @@ export class Channel extends EventEmitter {
 
     on(event: "connect" | "disconnect", listener: () => void): this;
     on(event: "error", listener: (err: Error) => void): this;
-    on(event: "message", listener: (sender: number, ...data) => void): this;
-    on(event: string, listener: (sender: number, ...data) => void): this;
-    on(event, listener): this {
+    on(event: "message", listener: (sender: number, ...data: any[]) => void): this;
+    on(event: string, listener: (sender: number, ...data: any[]) => void): this;
+    on(event: string, listener: (...args: any[]) => void): this {
         return super.on(event, listener);
     }
 
     once(event: "connect" | "disconnect", listener: () => void): this;
     once(event: "error", listener: (err: Error) => void): this;
-    once(event: "message", listener: (sender: number, ...data) => void): this;
-    once(event: string, listener: (sender: number, ...data) => void): this;
-    once(event, listener): this {
+    once(event: "message", listener: (sender: number, ...data: any[]) => void): this;
+    once(event: string, listener: (sender: number, ...data: any[]) => void): this;
+    once(event: string, listener: (...args: any[]) => void): this {
         return super.once(event, listener);
     }
 
@@ -120,8 +95,23 @@ export class Channel extends EventEmitter {
         return new Message(this, receiver);
     }
 
-    private send(receiver: number | "all", event: string, data: any[]) {
+    protected send(receiver: number | "all", event: string, data: any[]) {
         return this.socket.write(send(receiver, event, this.pid, ...data));
+    }
+
+    protected attachClient(socket: net.Socket): number {
+        // Ensure even a child-process exited abnormally and rebooted via some 
+        // mechanism, the new process still has the same pid as expected.
+        let pid = 0;
+
+        while (++pid) {
+            if (!this.clients.has(pid)) {
+                this.clients.set(pid, socket);
+                break;
+            }
+        }
+
+        return pid;
     }
 }
 

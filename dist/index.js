@@ -3,8 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
 const open_channel_1 = require("open-channel");
 const bsp_1 = require("bsp");
-const isSocketResetError = require("is-socket-reset-error");
-const Clients = {};
+const advanced_collections_1 = require("advanced-collections");
 class Message {
     constructor(channel, receiver) {
         this.channel = channel;
@@ -21,49 +20,26 @@ exports.Message = Message;
 class Channel extends events_1.EventEmitter {
     constructor() {
         super(...arguments);
+        this.temp = [];
+        this.clients = new advanced_collections_1.BiMap();
+        this.detachClient = (socket) => this.clients.deleteValue(socket);
         this.iChannel = open_channel_1.openChannel("ipchannel", socket => {
             let temp = [];
             socket.on("data", (buf) => {
                 let msg = bsp_1.receive(buf, temp);
                 for (let [receiver, event, ...data] of msg) {
                     if (receiver == "all") {
-                        for (let pid in Clients) {
-                            if (!isNaN(pid)) {
-                                Clients[pid].write(bsp_1.send(data[0], event, ...data.slice(1)));
-                            }
+                        for (let socket of this.clients.values()) {
+                            socket.write(bsp_1.send(data[0], event, ...data.slice(1)));
                         }
                     }
                     else {
-                        Clients[receiver].write(bsp_1.send(data[0], event, ...data.slice(1)));
+                        this.clients.get(receiver).write(bsp_1.send(data[0], event, ...data.slice(1)));
                     }
                 }
-            }).on("end", () => {
-                for (let pid in Clients) {
-                    if (!isNaN(pid) && Clients[pid] === socket) {
-                        delete Clients[pid];
-                        break;
-                    }
-                }
-            }).on("error", (err) => {
-                if (isSocketResetError(err)) {
-                    try {
-                        socket.destroy();
-                        socket.unref();
-                    }
-                    finally { }
-                }
-            });
-            let pid = 1;
-            while (true) {
-                if (!Clients[pid]) {
-                    Clients[pid] = socket;
-                    break;
-                }
-                pid++;
-            }
-            socket.write(bsp_1.send(0, "connect", pid));
+            }).on("end", this.detachClient).on("close", this.detachClient);
+            socket.write(bsp_1.send(0, "connect", this.attachClient(socket)));
         });
-        this.temp = [];
         this.socket = this.iChannel.connect().on("data", buf => {
             let msg = bsp_1.receive(buf, this.temp);
             for (let [sender, event, ...data] of msg) {
@@ -97,6 +73,16 @@ class Channel extends events_1.EventEmitter {
     }
     send(receiver, event, data) {
         return this.socket.write(bsp_1.send(receiver, event, this.pid, ...data));
+    }
+    attachClient(socket) {
+        let pid = 0;
+        while (++pid) {
+            if (!this.clients.has(pid)) {
+                this.clients.set(pid, socket);
+                break;
+            }
+        }
+        return pid;
     }
 }
 exports.Channel = Channel;
