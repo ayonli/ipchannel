@@ -28,13 +28,14 @@ class Channel extends events_1.EventEmitter {
             socket.on("data", (buf) => {
                 let msg = bsp_1.receive(buf, temp);
                 for (let [receiver, event, ...data] of msg) {
+                    let socket;
                     if (receiver == "all") {
                         for (let socket of this.clients.values()) {
                             socket.write(bsp_1.send(data[0], event, ...data.slice(1)));
                         }
                     }
-                    else {
-                        this.clients.get(receiver).write(bsp_1.send(data[0], event, ...data.slice(1)));
+                    else if (socket = this.clients.get(receiver)) {
+                        socket.write(bsp_1.send(data[0], event, ...data.slice(1)));
                     }
                 }
             }).on("end", this.detachClient).on("close", this.detachClient);
