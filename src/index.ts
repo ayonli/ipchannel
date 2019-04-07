@@ -32,7 +32,7 @@ export class Channel extends EventEmitter {
             for (let [receiver, event, ...data] of msg) {
                 let socket: net.Socket;
 
-                if (receiver == "all") {
+                if (receiver === "all") {
                     for (let socket of this.clients.values()) {
                         socket.write(send(data[0], event, ...data.slice(1)));
                     }
@@ -50,7 +50,7 @@ export class Channel extends EventEmitter {
         let msg = receive<[number | "all", string, ...any[]]>(buf, this.temp);
 
         for (let [sender, event, ...data] of msg) {
-            if (event == "connect") {
+            if (event === "connect") {
                 this.pid = data[0];
                 this.emit("connect", null);
             } else {

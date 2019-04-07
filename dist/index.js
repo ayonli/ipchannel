@@ -29,7 +29,7 @@ class Channel extends events_1.EventEmitter {
                 let msg = bsp_1.receive(buf, temp);
                 for (let [receiver, event, ...data] of msg) {
                     let socket;
-                    if (receiver == "all") {
+                    if (receiver === "all") {
                         for (let socket of this.clients.values()) {
                             socket.write(bsp_1.send(data[0], event, ...data.slice(1)));
                         }
@@ -44,7 +44,7 @@ class Channel extends events_1.EventEmitter {
         this.socket = this.iChannel.connect().on("data", buf => {
             let msg = bsp_1.receive(buf, this.temp);
             for (let [sender, event, ...data] of msg) {
-                if (event == "connect") {
+                if (event === "connect") {
                     this.pid = data[0];
                     this.emit("connect", null);
                 }
