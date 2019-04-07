@@ -1,6 +1,6 @@
 {
   "name": "ipchannel",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Elegant and self-hosting channel for inter-process communication.",
   "main": "dist/index.js",
   "types": "src/index.ts",
