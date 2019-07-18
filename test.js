@@ -73,7 +73,7 @@ if (cluster.isMaster) {
         return process.send(msg);
     }
 
-    describe("open channel", () => {
+    describe("Inter-Process Channel", () => {
         it("should not connected at first", (done) => {
             try {
                 assert.strictEqual(channel.connected, false);
