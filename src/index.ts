@@ -34,16 +34,16 @@ export class Channel extends EventEmitter {
 
                 if (receiver === "all") {
                     for (let socket of this.clients.values()) {
-                        socket.write(send(data[0], event, ...data.slice(1)));
+                        socket.write(send([data[0], event, ...data.slice(1)]));
                     }
                 } else if (socket = this.clients.get(receiver)) {
-                    socket.write(send(data[0], event, ...data.slice(1)));
+                    socket.write(send([data[0], event, ...data.slice(1)]));
                 }
             }
         }).on("end", this.detachClient).on("close", this.detachClient);
 
         // notify the client has connected
-        socket.write(send(0, "connect", this.attachClient(socket)));
+        socket.write(send([0, "connect", this.attachClient(socket)]));
     });
     protected socket = this.iChannel.connect().on("data", buf => {
         // client-side logic
@@ -96,7 +96,7 @@ export class Channel extends EventEmitter {
     }
 
     protected send(receiver: number | "all", event: string, data: any[]) {
-        return this.socket.write(send(receiver, event, this.pid, ...data));
+        return this.socket.write(send([receiver, event, this.pid, ...data]));
     }
 
     protected attachClient(socket: net.Socket): number {
