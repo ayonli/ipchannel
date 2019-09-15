@@ -26,23 +26,23 @@ class Channel extends events_1.EventEmitter {
         this.iChannel = open_channel_1.openChannel("ipchannel", socket => {
             let temp = [];
             socket.on("data", (buf) => {
-                let msg = bsp_1.receive(buf, temp);
+                let msg = bsp_1.decode(buf, temp);
                 for (let [receiver, event, ...data] of msg) {
                     let socket;
                     if (receiver === "all") {
                         for (let socket of this.clients.values()) {
-                            socket.write(bsp_1.send([data[0], event, ...data.slice(1)]));
+                            socket.write(bsp_1.encode([data[0], event, ...data.slice(1)]));
                         }
                     }
                     else if (socket = this.clients.get(receiver)) {
-                        socket.write(bsp_1.send([data[0], event, ...data.slice(1)]));
+                        socket.write(bsp_1.encode([data[0], event, ...data.slice(1)]));
                     }
                 }
             }).on("end", this.detachClient).on("close", this.detachClient);
-            socket.write(bsp_1.send([0, "connect", this.attachClient(socket)]));
+            socket.write(bsp_1.encode([0, "connect", this.attachClient(socket)]));
         });
         this.socket = this.iChannel.connect().on("data", buf => {
-            let msg = bsp_1.receive(buf, this.temp);
+            let msg = bsp_1.decode(buf, this.temp);
             for (let [sender, event, ...data] of msg) {
                 if (event === "connect") {
                     this.pid = data[0];
@@ -73,7 +73,7 @@ class Channel extends events_1.EventEmitter {
         return new Message(this, receiver);
     }
     send(receiver, event, data) {
-        return this.socket.write(bsp_1.send([receiver, event, this.pid, ...data]));
+        return this.socket.write(bsp_1.encode([receiver, event, this.pid, ...data]));
     }
     attachClient(socket) {
         let pid = 0;

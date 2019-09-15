@@ -1,7 +1,7 @@
 import * as net from "net";
 import { EventEmitter } from "events";
 import { openChannel } from "open-channel";
-import { send, receive } from "bsp";
+import { encode, decode } from "bsp";
 import { BiMap } from "advanced-collections";
 
 export class Message {
@@ -27,27 +27,27 @@ export class Channel extends EventEmitter {
         let temp = [];
 
         socket.on("data", (buf) => {
-            let msg = receive<[number | "all", string, ...any[]]>(buf, temp);
+            let msg = decode<[number | "all", string, ...any[]]>(buf, temp);
 
             for (let [receiver, event, ...data] of msg) {
                 let socket: net.Socket;
 
                 if (receiver === "all") {
                     for (let socket of this.clients.values()) {
-                        socket.write(send([data[0], event, ...data.slice(1)]));
+                        socket.write(encode([data[0], event, ...data.slice(1)]));
                     }
                 } else if (socket = this.clients.get(receiver)) {
-                    socket.write(send([data[0], event, ...data.slice(1)]));
+                    socket.write(encode([data[0], event, ...data.slice(1)]));
                 }
             }
         }).on("end", this.detachClient).on("close", this.detachClient);
 
         // notify the client has connected
-        socket.write(send([0, "connect", this.attachClient(socket)]));
+        socket.write(encode([0, "connect", this.attachClient(socket)]));
     });
     protected socket = this.iChannel.connect().on("data", buf => {
         // client-side logic
-        let msg = receive<[number | "all", string, ...any[]]>(buf, this.temp);
+        let msg = decode<[number | "all", string, ...any[]]>(buf, this.temp);
 
         for (let [sender, event, ...data] of msg) {
             if (event === "connect") {
@@ -96,7 +96,7 @@ export class Channel extends EventEmitter {
     }
 
     protected send(receiver: number | "all", event: string, data: any[]) {
-        return this.socket.write(send([receiver, event, this.pid, ...data]));
+        return this.socket.write(encode([receiver, event, this.pid, ...data]));
     }
 
     protected attachClient(socket: net.Socket): number {
